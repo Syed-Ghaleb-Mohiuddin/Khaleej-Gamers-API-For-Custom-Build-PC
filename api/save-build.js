@@ -1,5 +1,22 @@
 // /api/save-build.js
 export default async function handler(req, res) {
+  // === ADD THESE LINES AT THE VERY TOP OF THE FUNCTION ===
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', 'https://khaleej-gamers.myshopify.com');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization'
+  );
+
+  // Handle OPTIONS request (preflight)
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+  // === END OF NEW LINES ===
+
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
