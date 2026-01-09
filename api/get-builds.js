@@ -1,4 +1,4 @@
-// /api/save-build.js
+// /api/get-builds.js
 export default async function handler(req, res) {
   // === ADD THESE LINES AT THE VERY TOP OF THE FUNCTION ===
   // Set CORS headers
@@ -17,15 +17,15 @@ export default async function handler(req, res) {
   }
   // === END OF NEW LINES ===
 
-  // Only allow POST requests
-  if (req.method !== 'POST') {
+  // Only allow GET requests
+  if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   // Get authorization header
   const authHeader = req.headers.authorization;
   
-  // Verify API key (you set this in Vercel environment variables)
+  // Verify API key
   const API_KEY = process.env.API_KEY || 'sk_7f82jfjf93jf8jf83jf83jf';
   
   if (!authHeader || authHeader !== `Bearer ${API_KEY}`) {
@@ -33,33 +33,28 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { customerId, buildData } = req.body;
+    const { customerId } = req.query;
 
-    if (!customerId || !buildData) {
-      return res.status(400).json({ error: 'Missing customerId or buildData' });
+    if (!customerId) {
+      return res.status(400).json({ error: 'Missing customerId' });
     }
 
-    // Log the data we received
-    console.log('Received build for customer:', customerId);
-    console.log('Build name:', buildData.name);
-    console.log('Component count:', Object.keys(buildData.config).length);
-    
-    // In a real implementation, you would save to a database
-    // For now, we'll just return success and log the data
+    console.log('Getting builds for customer:', customerId);
+
+    // For now, return an empty array because we haven't saved anything yet
+    // Once we start saving builds, you'll update this to return real data
     
     // Simulate processing time
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 300));
 
-    // Return success with the build ID
+    // Return empty array (no builds yet in database)
     return res.status(200).json({
       success: true,
-      message: 'Build saved successfully to account',
-      buildId: buildData.id || Date.now(),
-      timestamp: new Date().toISOString()
+      builds: []  // This will be empty until we save actual builds
     });
 
   } catch (error) {
-    console.error('Error saving build:', error);
+    console.error('Error fetching builds:', error);
     return res.status(500).json({ error: error.message });
   }
 }
