@@ -1,7 +1,9 @@
 // /api/get-builds.js
+import fs from 'fs/promises';
+import path from 'path';
+
 export default async function handler(req, res) {
-  // === ADD THESE LINES AT THE VERY TOP OF THE FUNCTION ===
-  // Set CORS headers
+  // === CORS HEADERS ===
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', 'https://khaleej-gamers.myshopify.com');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -15,7 +17,7 @@ export default async function handler(req, res) {
     res.status(200).end();
     return;
   }
-  // === END OF NEW LINES ===
+  // === END CORS ===
 
   // Only allow GET requests
   if (req.method !== 'GET') {
@@ -41,17 +43,54 @@ export default async function handler(req, res) {
 
     console.log('Getting builds for customer:', customerId);
 
-    // For now, return an empty array because we haven't saved anything yet
-    // Once we start saving builds, you'll update this to return real data
-    
-    // Simulate processing time
-    await new Promise(resolve => setTimeout(resolve, 300));
+    // Try to read from file storage first
+    const dataDir = path.join('/tmp', 'pc-builder-data');
+    const filePath = path.join(dataDir, `${customerId}.json`);
 
-    // Return empty array (no builds yet in database)
-    return res.status(200).json({
-      success: true,
-      builds: []  // This will be empty until we save actual builds
-    });
+    try {
+      // Check if file exists
+      await fs.access(filePath);
+      
+      // Read and parse file
+      const fileContent = await fs.readFile(filePath, 'utf8');
+      const builds = JSON.parse(fileContent);
+      
+      console.log(`Found ${builds.length} builds for customer ${customerId}`);
+
+      return res.status(200).json({
+        success: true,
+        builds: builds,
+        source: 'file_storage',
+        count: builds.length
+      });
+
+    } catch (fileError) {
+      // File doesn't exist, check memory storage
+      console.log('No file found, checking memory storage...');
+      
+      if (global.customerBuilds && global.customerBuilds[customerId]) {
+        const builds = global.customerBuilds[customerId];
+        console.log(`Found ${builds.length} builds in memory for customer ${customerId}`);
+        
+        return res.status(200).json({
+          success: true,
+          builds: builds,
+          source: 'memory_storage',
+          count: builds.length
+        });
+      } else {
+        // No builds found
+        console.log(`No builds found for customer ${customerId}`);
+        
+        return res.status(200).json({
+          success: true,
+          builds: [],
+          source: 'none',
+          count: 0,
+          message: 'No builds found'
+        });
+      }
+    }
 
   } catch (error) {
     console.error('Error fetching builds:', error);
